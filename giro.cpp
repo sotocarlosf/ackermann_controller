@@ -17,6 +17,7 @@
 #include "opencv2/opencv.hpp"
 
 using namespace std;
+using namespace cv;
 
 class DefinicionCamino
 {
@@ -106,8 +107,8 @@ class DefinicionCamino
 
   void analyze_image(const cv::Mat bw){
 
-	cv::Canny(bw, edge, 50, 200, 3 ); // detect edges
-	cv::HoughLinesP(edge, lines_, 1, CV_PI/180, 50, 50, 10 ); // detect lines
+	cv::Canny(bw, edge, 150, 450, 3 ); // detect edges
+	cv::HoughLinesP(edge, lines_, 1, CV_PI/180, 50, 30, 5 ); // detect lines
 	
 
 	//With the next for all lines are separated, if their slope
@@ -168,7 +169,7 @@ class DefinicionCamino
 	}
 	else if (lines_izq.size()>0 && lines_der.size()==0){
 		grados = atan((yfip-yiip)/(xfip-xiip))*180/3.1416;
-		CentroDelCamino.x = std::min(imageWidth()-1, int((60+grados)*10+(xiip+xfip)/2));
+		CentroDelCamino.x = std::min(imageWidth()-1, int((60+grados)*0+(xiip+xfip)/2));
 		CentroDelCamino.y = (yiip+yfip)/2;
 		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
 		//ROS_INFO("Grados =%f",grados);
@@ -261,9 +262,26 @@ int main(int argc, char** argv)
 	cv::VideoCapture cap(video_source);
 	// Check if video device can be opened with the given index
 	if(!cap.isOpened()) return 1;
-	cv::Mat frame,ROI,gray,bw;
+	cv::Mat frame,ROI,gray,blur,bw,result;
+	cv::Point corners [1][4];
+	corners [0][0] = Point(210,0);
+	corners [0][1] = Point(430,0);
+	corners [0][2] = Point(639,130);
+	corners [0][3] = Point(0,130);
+	const Point* corner_list[1] = {corners[0]};
+	int num_points = 4;
+	int num_polygons = 1;
+	int line_type = 8;
+	cv::Mat mask(130,640,CV_8UC1, cv::Scalar(0,0,0));
+	cv::fillPoly( mask, corner_list, &num_points, num_polygons, cv::Scalar( 255, 255, 255 ),  line_type);
+	
 	//cv::Rect myROI(Xi,Yi, Largo,Alto);
-	cv::Rect myROI(0,349,639,130);
+	cv::Rect myROI(0,350,640,130);
+	sensor_msgs::ImagePtr msg;
+
+	ROS_INFO("Dentro del while");
+	ROS_INFO("Mask rows = %i, columns = %i", mask.rows, mask.cols);
+	ROS_INFO("jkb");
 
 	while(ros::ok()) {
 
@@ -271,8 +289,10 @@ int main(int argc, char** argv)
 		// Check if grabbed frame is actually full with some content
 		if(!frame.empty()) {
 			ROI = frame(myROI);
-			cv::cvtColor(ROI, gray, cv::COLOR_BGR2GRAY);//ABAJO
-			bw = gray > thr;
+			medianBlur(ROI, blur,5);
+			cv::cvtColor(blur, gray, cv::COLOR_BGR2GRAY);//ABAJO
+			bw = gray < thr;
+			cv::bitwise_and(bw, mask, result);
 		}
 		dc.analyze_image(bw);
 
@@ -311,6 +331,4 @@ int main(int argc, char** argv)
 	velocidad_pub.publish(velocidad);
 
 	return 0;
-	}
-
-	
+}

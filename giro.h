@@ -1,5 +1,5 @@
-#ifndef GIRO_H
-#define GIRO_H
+#ifndef DEFINICION_CAMINO_H
+#define DEFINICION_CAMINO_H
 //DefinicionCamino dc;
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
@@ -39,7 +39,7 @@ class DefinicionCamino
 	std::vector<cv::Vec4i> lines_der;
 	std::vector<cv::Vec4i> lines_izq;
 
-	//cv_bridge::CvImagePtr cv_ptr;
+	cv_bridge::CvImagePtr cv_ptr;
 
 	public:
 	DefinicionCamino()
@@ -52,11 +52,11 @@ class DefinicionCamino
 		CentroDelCamino.y = 200;
 
 		// Subscribe to input video feed and publish output video feed
-		//image_sub_ = it_.subscribe("usb_cam/image", 1,
-		//&DefinicionCamino::imageCallback, this);
+		image_sub_ = it_.subscribe("usb_cam/image", 1,
+		&DefinicionCamino::imageCallback, this);
 		image_pub_ = it_.advertise("usb_cam/camino", 1);
 
-		//cv::namedWindow(OPENCV_WINDOW);
+		cv::namedWindow(OPENCV_WINDOW);
 	}
 
 
@@ -74,12 +74,12 @@ class DefinicionCamino
 		&DefinicionCamino::imageCallback, this);
 		image_pub_ = it_.advertise("usb_cam/camino", 1);
 
-		//cv::namedWindow(OPENCV_WINDOW);
+		cv::namedWindow(OPENCV_WINDOW);
 	}
 
 	~DefinicionCamino()
 	{
-		//cv::destroyWindow(OPENCV_WINDOW);
+		cv::destroyWindow(OPENCV_WINDOW);
 	}
 
 
@@ -165,7 +165,7 @@ class DefinicionCamino
 		xfip = xfi/lines_izq.size();
 		yfip = yfi/lines_izq.size();
 	
-		//cv::line( cv_ptr->image, cv::Point(xiip,yiip), cv::Point(xfip,yfip),cv::Scalar(120,0,200), 2, cv::LINE_AA);
+		cv::line( cv_ptr->image, cv::Point(xiip,yiip), cv::Point(xfip,yfip),cv::Scalar(120,0,200), 2, cv::LINE_AA);
 	}
 	//Get the average of all right lines and draw the average line
 	if(lines_der.size()>0){
@@ -174,7 +174,7 @@ class DefinicionCamino
 		xfdp = xfd/lines_der.size();
 		yfdp = yfd/lines_der.size();
 	
-		//cv::line( cv_ptr->image, cv::Point(xidp,yidp), cv::Point(xfdp,yfdp),cv::Scalar(120,0,200), 2, cv::LINE_AA);
+		cv::line( cv_ptr->image, cv::Point(xidp,yidp), cv::Point(xfdp,yfdp),cv::Scalar(120,0,200), 2, cv::LINE_AA);
 	}
 
 	//------------------------DIBUJAR UN CIRCULO En el promedio de los puntos de las lineas-----------------
@@ -182,7 +182,7 @@ class DefinicionCamino
 	if (lines_izq.size()>0 && lines_der.size()>0){
 		CentroDelCamino.x = (xiip+xfip+xidp+xfdp)/4;
 		CentroDelCamino.y = (yiip+yfip+yidp+yfdp)/4;
-		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
+		cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
 		//if(flag>0){DerPer=0;IzqPer=0;flag=0;}
 		numero_de_lineas = 2.0;
 	}
@@ -190,7 +190,7 @@ class DefinicionCamino
 		grados = atan((yfip-yiip)/(xfip-xiip))*180/3.1416;
 		CentroDelCamino.x = std::min(imageWidth()-1, int((60+grados)*10+(xiip+xfip)/2));
 		CentroDelCamino.y = (yiip+yfip)/2;
-		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
+		cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
 		//ROS_INFO("Grados =%f",grados);
 		DerPer=1;
 		numero_de_lineas = 1.0;
@@ -200,7 +200,7 @@ class DefinicionCamino
 		grados = atan((yfdp-yidp)/(xfdp-xidp))*180/3.1416;
 		CentroDelCamino.x = std::max(1, int((60-grados)*-10+(xidp+xfdp)/2));
 		CentroDelCamino.y = (yidp+yfdp)/2;
-		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
+		cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
 		//ROS_INFO("Grados =%f",grados);
 		IzqPer=1;
 		numero_de_lineas = 1.0;
@@ -209,7 +209,7 @@ class DefinicionCamino
 	else{	
 		middle_of_road_.x = imageWidth()/2;
 		middle_of_road_.y = imageHeight()/2;
-		//cv::circle(cv_ptr->image, middle_of_road_, 10, CV_RGB(50,50,50));
+		cv::circle(cv_ptr->image, middle_of_road_, 10, CV_RGB(50,50,50));
 		/*
 		if(IzqPer>0){CentroDelCamino.x = -imageWidth();middle_of_road_.x=10.0;flag=1;}
 		else if(DerPer>0){CentroDelCamino.x = 2*imageWidth();middle_of_road_.x=imageWidth()-10.0;flag=1;}
@@ -228,116 +228,7 @@ class DefinicionCamino
 
 
 	// Update GUI Window
-	//cv::imshow(OPENCV_WINDOW, cv_ptr->image);
-	cv::waitKey(3);
-
-  }
-
-  void analyze_image(const cv::Mat bw){
-
-	cv::Canny(bw, edge, 50, 200, 3 ); // detect edges
-	cv::HoughLinesP(edge, lines_, 1, CV_PI/180, 50, 50, 10 ); // detect lines
-	
-
-	//With the next for all lines are separated, if their slope
-	//Is positive they are the right lines
-	//Is negative they are the left lines
-	for( int i = 0; i < lines_.size(); i++ ){
-		l = lines_[i];
-		//l0,l1,l2,l3
-		//[x1,y1,x2,y2]
-		co = l[3] - l[1];
-		ca = l[2] - l[0];
-		//return in radians, convert to degrees
-		degrees = atan(co/ca)*180/3.1416;
-		mx=60;
-		mn=10;
-		if(degrees>mn && degrees<mx){
-			lines_der.push_back(lines_[i]);
-			xid+=l[0];
-			yid+=l[1];
-			xfd+=l[2];
-			yfd+=l[3];
-		}
-		if(degrees>-mx && degrees<-mn){
-			lines_izq.push_back(lines_[i]);
-			xii+=l[0];
-			yii+=l[1];
-			xfi+=l[2];
-			yfi+=l[3];
-		}
-	}
-	//Get the average of all left lines and draw the average line
-	if(lines_izq.size()>0){
-		xiip = xii/lines_izq.size();
-		yiip = yii/lines_izq.size();
-		xfip = xfi/lines_izq.size();
-		yfip = yfi/lines_izq.size();
-	
-		//cv::line( cv_ptr->image, cv::Point(xiip,yiip), cv::Point(xfip,yfip),cv::Scalar(120,0,200), 2, cv::LINE_AA);
-	}
-	//Get the average of all right lines and draw the average line
-	if(lines_der.size()>0){
-		xidp = xid/lines_der.size();
-		yidp = yid/lines_der.size();
-		xfdp = xfd/lines_der.size();
-		yfdp = yfd/lines_der.size();
-	
-		//cv::line( cv_ptr->image, cv::Point(xidp,yidp), cv::Point(xfdp,yfdp),cv::Scalar(120,0,200), 2, cv::LINE_AA);
-	}
-
-	//------------------------DIBUJAR UN CIRCULO En el promedio de los puntos de las lineas-----------------
-	// show the image with a point mark at the centroid, and detected lines
-	if (lines_izq.size()>0 && lines_der.size()>0){
-		CentroDelCamino.x = (xiip+xfip+xidp+xfdp)/4;
-		CentroDelCamino.y = (yiip+yfip+yidp+yfdp)/4;
-		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
-		//if(flag>0){DerPer=0;IzqPer=0;flag=0;}
-		numero_de_lineas = 2.0;
-	}
-	else if (lines_izq.size()>0 && lines_der.size()==0){
-		grados = atan((yfip-yiip)/(xfip-xiip))*180/3.1416;
-		CentroDelCamino.x = std::min(imageWidth()-1, int((60+grados)*10+(xiip+xfip)/2));
-		CentroDelCamino.y = (yiip+yfip)/2;
-		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
-		//ROS_INFO("Grados =%f",grados);
-		DerPer=1;
-		numero_de_lineas = 1.0;
-		
-	}
-	else if (lines_izq.size()==0 && lines_der.size()>0){
-		grados = atan((yfdp-yidp)/(xfdp-xidp))*180/3.1416;
-		CentroDelCamino.x = std::max(1, int((60-grados)*-10+(xidp+xfdp)/2));
-		CentroDelCamino.y = (yidp+yfdp)/2;
-		//cv::circle(cv_ptr->image, CentroDelCamino, 10, CV_RGB(50,50,50));
-		//ROS_INFO("Grados =%f",grados);
-		IzqPer=1;
-		numero_de_lineas = 1.0;
-		
-	}
-	else{	
-		middle_of_road_.x = imageWidth()/2;
-		middle_of_road_.y = imageHeight()/2;
-		//cv::circle(cv_ptr->image, middle_of_road_, 10, CV_RGB(50,50,50));
-		/*
-		if(IzqPer>0){CentroDelCamino.x = -imageWidth();middle_of_road_.x=10.0;flag=1;}
-		else if(DerPer>0){CentroDelCamino.x = 2*imageWidth();middle_of_road_.x=imageWidth()-10.0;flag=1;}
-		CentroDelCamino.y = imageHeight()/2;
-		middle_of_road_.y = imageHeight()/2;
-		cv::circle(cv_ptr->image, middle_of_road_, 10, CV_RGB(0,0,0));
-		*/
-		numero_de_lineas = 0.5;
-	}
-	//--------------------------CLEAR AUXILIARY ARRAYS and variables------------
-	lines_izq.clear();
-	lines_der.clear();
-	xii = yii = xfi = yfi = 0;
-	xid = yid = xfd = yfd = 0;
-
-
-
-	// Update GUI Window
-	//cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 	cv::waitKey(3);
 
   }
